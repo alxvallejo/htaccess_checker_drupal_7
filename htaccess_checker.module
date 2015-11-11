@@ -1,0 +1,188 @@
+<?php
+
+/**
+ * Implements hook_menu
+ */
+function htaccess_checker_menu() {
+  $items = array();
+  $items['admin/config/search/htaccess_check'] = array(
+    'title' => t('Htaccess Checker'),
+    'access arguments' => array('administer site configuration'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('htaccess_checker_admin'),
+  );
+  return $items;
+}
+
+function htaccess_checker_form_htaccess_checker_admin_alter(&$form, &$form_state, $form_id) {
+  $form['#after_build'][] = 'htaccess_checker_theme_form';
+}
+
+function htaccess_checker_theme_form(&$form, &$form_state, $form_id) {
+  drupal_add_css(drupal_get_path('module','htaccess_checker') . '/css/htaccess_checker-form.css');
+  return $form;
+}
+
+function htaccess_checker_theme($existing, $type, $theme, $path) {
+  $items['htaccess_checker_admin'] = array(
+    'render element' => 'form',
+    'template' => 'htaccess-checker-form',
+    'path' => drupal_get_path('module', 'htaccess_checker') . '/templates',
+  );
+
+  return $items;
+}
+
+/**
+ * Settings variables
+ */
+function htaccess_checker_admin() {
+  $form = array();
+
+  $form['htaccess_csv_upload'] = array(
+    '#type' => 'file',
+  );
+
+  $form['#prefix'] = '<div id="htaccess-check">';
+  $form['#suffix'] = '</div>';
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Submit'),
+    '#ajax' => array(
+      'callback' => 'htaccess_checker_callback',
+      'event' => 'click',
+      'wrapper' => 'htaccess-check',
+      'method' => 'after',
+      'effect' => 'fade',
+    ),
+  );
+
+  $form['results'] = array();
+
+  //return system_settings_form($form);
+  return $form;
+}
+
+/**
+ * Callback for htaccess checker form
+ *
+ * @param $form
+ * @param $form_state
+ */
+function htaccess_checker_callback(&$form, $form_state) {
+
+  if ($errors = form_get_errors()) {
+    return $form;
+  }
+
+  // setup redirects list
+  $redirects = array();
+  $redirect_count = 0;
+
+  // setup ajax commands array
+  $commands = array();
+
+  // save file to temp dir
+  $file = file_save_upload('htaccess_csv_upload', array('file_validate_extensions' => array('csv')), "temporary://", $replace = FILE_EXISTS_REPLACE);
+  if ($file) {
+    $row = 0;
+    // deal with mac line endings (from http://php.net/manual/en/function.fgetcsv.php#87196)
+    ini_set('auto_detect_line_endings',TRUE);
+    if (($handle = fopen($file->uri, "r")) !== FALSE) {
+      while (($data = fgetcsv($handle, 500, ",")) !== FALSE) {
+        $redirects[$row]['src'] = $data[0];
+        $redirects[$row]['tgt'] = $data[1];
+        $row++;
+        $redirect_count++;
+      }
+      fclose($handle);
+    }
+    ini_set('auto_detect_line_endings',FALSE);
+
+    //$num_redirects = count($redirects);
+    $successful_redirects = 0;
+    $no_redirects = array();
+    $wrong_redirects = array();
+
+    foreach ($redirects as $i => $redirect) {
+      $src = $redirect['src'];
+      $tgt = $redirect['tgt'];
+      // set up headers
+      $headers = array(
+        'Host: ' . $src
+      );
+      //header("Host: " . $src);
+      // curl
+      $curl = curl_init();
+      curl_setopt($curl,CURLOPT_HTTPHEADER,$headers);
+      curl_setopt($curl,CURLOPT_URL,$tgt);
+      //curl_setopt($curl,CURLOPT_HEADER,true);
+      curl_setopt($curl,CURLINFO_HEADER_OUT,true);
+      curl_setopt($curl,CURLOPT_RETURNTRANSFER,true);
+      $result = curl_exec($curl);
+      $curl_header_sent = curl_getinfo($curl,CURLINFO_HEADER_OUT);
+      $curl_effective_url = curl_getinfo($curl,CURLINFO_EFFECTIVE_URL);
+
+      // The effective url will have a trailing slash.
+      // Make sure the target also gets the slash for a valid comparison
+
+      if (substr($tgt, -1) !== '/') {
+        $tgt = $tgt . '/';
+      }
+
+      if (substr($curl_effective_url, -1) !== '/') {
+        $curl_effective_url = $curl_effective_url . '/';
+      }
+
+      // String comparison
+      if ($tgt == $curl_effective_url) {
+        $successful_redirects++;
+      }
+      elseif ($src == $curl_effective_url) {
+        $no_redirects[$i]['src'] = $src;
+        $no_redirects[$i]['tgt'] = $tgt;
+        $no_redirects[$i]['effective'] = $curl_effective_url;
+      }
+      else {
+        $wrong_redirects[$i]['src'] = $src;
+        $wrong_redirects[$i]['tgt'] = $tgt;
+        $wrong_redirects[$i]['effective'] = $curl_effective_url;
+      }
+    }
+    curl_close($curl);
+
+    // Redirect count
+    $commands[] = ajax_command_append('#htaccess-check', $redirect_count . ' redirects found in file ' . $file->filename);
+
+    // Format response
+    $successful_report = '<div class="success-redirects">' . $successful_redirects . ' redirects tested successfully.</div>';
+    $commands[] = ajax_command_append('#htaccess-check', $successful_report);
+
+    // No redirects report
+    if (!empty($no_redirects)) {
+      $no_redirect_report = array();
+      foreach ($no_redirects as $i => $no_redirect) {
+        $no_redirect_report[] = '<div class="no-redirects"><span class="src">' . $no_redirect['src'] . '</span> failed to redirect to <span class="tgt">' . $no_redirect['tgt'] . '</span> and instead redirected to <span class="effective">' . $no_redirect['effective'] . '</span></div>';
+      }
+      $commands[] = ajax_command_append('#htaccess-check', implode('',$no_redirect_report));
+    }
+
+    // Wrong redirects report
+    if (!empty($wrong_redirects)) {
+      $wrong_redirect_report = array();
+      foreach ($wrong_redirects as $i => $wrong_redirect) {
+        $wrong_redirect_report[] = '<div class="wrong-redirects"><span class="src">' . $wrong_redirect['src'] . '</span> failed to redirect to <span class="tgt">' . $wrong_redirect['tgt'] . '</span> and instead redirected to <span class="effective">' . $wrong_redirect['effective'] . '</span></div>';
+      }
+      $commands[] = ajax_command_append('#htaccess-check', implode('',$wrong_redirect_report));
+    }
+
+    return array(
+      '#type' => 'ajax',
+      '#commands' => $commands,
+    );
+  }
+  else {
+    drupal_set_message('No file uploaded');
+  }
+}
