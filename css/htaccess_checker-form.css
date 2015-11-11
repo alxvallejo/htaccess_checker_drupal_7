@@ -1,3 +1,15 @@
-.wrong-redirects .src {
+#htaccess-check .success-redirects .success {
+    color: green;
+}
+
+#htaccess-check .wrong-redirects .src {
+    color: #0678be;
+}
+
+#htaccess-check .wrong-redirects .tgt {
     color: red;
+}
+
+#htaccess-check .wrong-redirects .effective {
+    color: #0678be;
 }

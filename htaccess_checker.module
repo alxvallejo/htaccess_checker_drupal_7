@@ -23,16 +23,6 @@ function htaccess_checker_theme_form(&$form, &$form_state, $form_id) {
   return $form;
 }
 
-function htaccess_checker_theme($existing, $type, $theme, $path) {
-  $items['htaccess_checker_admin'] = array(
-    'render element' => 'form',
-    'template' => 'htaccess-checker-form',
-    'path' => drupal_get_path('module', 'htaccess_checker') . '/templates',
-  );
-
-  return $items;
-}
-
 /**
  * Settings variables
  */
@@ -156,7 +146,7 @@ function htaccess_checker_callback(&$form, $form_state) {
     $commands[] = ajax_command_append('#htaccess-check', $redirect_count . ' redirects found in file ' . $file->filename);
 
     // Format response
-    $successful_report = '<div class="success-redirects">' . $successful_redirects . ' redirects tested successfully.</div>';
+    $successful_report = '<div class="success-redirects"><span class="success">' . $successful_redirects . '</span> redirects tested successfully.</div>';
     $commands[] = ajax_command_append('#htaccess-check', $successful_report);
 
     // No redirects report
