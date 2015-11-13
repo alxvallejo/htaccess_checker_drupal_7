@@ -9,7 +9,7 @@ jQuery(document).ready(function($) {
         e.preventDefault();
         t.row.add([
             '<input type="text" id="row-' + r + '-src" name="row-' + r + '-src">',
-            '<input type="text" id="row-' + r + '-src" name="row-' + r + '-src">',
+            '<input type="text" id="row-' + r + '-tgt" name="row-' + r + '-tgt">',
             ''
         ]).draw(false);
         r++;
@@ -17,4 +17,10 @@ jQuery(document).ready(function($) {
 
     // Automatically add a first row of data
     $('#add-row').click();
+
+    $('#edit-submit').on('click', function(e) {
+        var data = t.$('input').serialize();
+
+        debugger;
+    });
 })
