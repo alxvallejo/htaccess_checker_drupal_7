@@ -13,3 +13,8 @@
 #htaccess-check .wrong-redirects .effective {
     color: #0678be;
 }
+
+#redirects input {
+    font-size:15px;
+    padding:5px;
+}

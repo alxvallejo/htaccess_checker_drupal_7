@@ -18,9 +18,74 @@ function htaccess_checker_form_htaccess_checker_admin_alter(&$form, &$form_state
   $form['#after_build'][] = 'htaccess_checker_theme_form';
 }
 
-function htaccess_checker_theme_form(&$form, &$form_state, $form_id) {
+function htaccess_checker_theme_form(&$form, &$form_state) {
   drupal_add_css(drupal_get_path('module','htaccess_checker') . '/css/htaccess_checker-form.css');
+  drupal_add_css(drupal_get_path('module','htaccess_checker') . '/datatables/datatables.min.css');
+  drupal_add_js(drupal_get_path('module','htaccess_checker') . '/datatables/datatables.min.js');
+  drupal_add_js(drupal_get_path('module','htaccess_checker') . '/js/table.js', array('scope' => 'footer'));
   return $form;
+}
+
+function htaccess_checker_get_redirects() {
+  $redirects = null;
+  return $redirects;
+}
+
+function htaccess_checker_initialize_table() {
+  $header = array(
+    'Source',
+    'Target',
+    'Pass/Fail',
+  );
+
+  // Retrieve saved redirects
+  $redirects = htaccess_checker_get_redirects();
+
+  // Initialize the array that contains the data
+  $options = array();
+
+  if (!$redirects) {
+    $options[$redirects[0]] = array(
+      'source' => '',
+      'target' => '',
+      'result' => ''
+    );
+  }
+
+  $variables = array(
+    'header' => $header,
+    'rows' => $options,
+  );
+
+  theme_table($variables);
+
+}
+
+function htaccess_checker_new_row($i) {
+  return '<tr>
+    <td><input type="text" id="row-' . $i . '-src" name="row-' . $i . '-src"></td>
+    <td><input type="text" id="row-' . $i . '-tgt" name="row-' . $i . '-tgt"></td>
+    <td></td>
+    </tr>';
+}
+
+function htaccess_checker_return_table() {
+  $i = 0;
+  $rows = htaccess_checker_new_row($i);
+  return '
+    <table id="redirects" class="display" cellspacing="0" width="100%">
+        <thead>
+            <tr>
+                <th>Source</th>
+                <th>Target</th>
+                <th>Pass/Fail</th>
+            </tr>
+        </thead>
+        <tbody>
+            ' . $rows . '
+        </tbody>
+    </table>
+  ';
 }
 
 /**
@@ -35,6 +100,33 @@ function htaccess_checker_admin() {
 
   $form['#prefix'] = '<div id="htaccess-check">';
   $form['#suffix'] = '</div>';
+
+  $table = htaccess_checker_return_table();
+  //$table = htaccess_checker_initialize_table();
+
+  $form['redirects'] = array(
+    '#markup' => $table,
+  );
+
+  $form['add_row'] = array(
+    '#markup' => '<input type="submit" id="add-row" class="form-submit" value="Add Row">',
+  );
+
+  /*$form['redirects']['source'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Source'),
+    '#default_value' => '',
+    '#size' => 60,
+    '#maxlength' => 128,
+  );
+
+  $form['redirects']['target'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Target'),
+    '#default_value' => '',
+    '#size' => 60,
+    '#maxlength' => 128,
+  );*/
 
   $form['submit'] = array(
     '#type' => 'submit',
