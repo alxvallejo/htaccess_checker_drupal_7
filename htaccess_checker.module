@@ -173,6 +173,6 @@ function htaccess_checker_callback(&$form, $form_state) {
     );
   }
   else {
-    drupal_set_message('No file uploaded');
+    $commands[] = ajax_command_append('#htaccess-check', 'No file uploaded.');
   }
 }
