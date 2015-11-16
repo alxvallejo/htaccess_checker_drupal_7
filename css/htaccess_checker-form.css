@@ -14,7 +14,8 @@
     color: #0678be;
 }
 
-#redirects input {
+#redirects input,
+#htaccess-checker-redirect-table input {
     font-size:15px;
     padding:5px;
 }
