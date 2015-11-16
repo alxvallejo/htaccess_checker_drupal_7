@@ -32,60 +32,68 @@ function htaccess_checker_get_redirects() {
 }
 
 function htaccess_checker_initialize_table() {
+
   $header = array(
-    'Source',
-    'Target',
-    'Pass/Fail',
+    array('data' => 'Source'),
+    array('data' => 'Target'),
+    array('data' => 'Pass/Fail'),
   );
 
-  // Retrieve saved redirects
-  $redirects = htaccess_checker_get_redirects();
-
   // Initialize the array that contains the data
-  $options = array();
+  $rows = array();
 
-  if (!$redirects) {
-    $options[$redirects[0]] = array(
-      'source' => '',
-      'target' => '',
-      'result' => ''
-    );
-  }
+  $rows = array(
+    array('data' => array(
+      '',''
+    ))
+  );
 
   $variables = array(
     'header' => $header,
-    'rows' => $options,
+    'rows' => $rows,
+    'attributes' => array(),
   );
 
   theme_table($variables);
 
 }
 
-function htaccess_checker_new_row($i) {
-  return '<tr>
-    <td><input type="text" id="row-' . $i . '-src" name="row-' . $i . '-src"></td>
-    <td><input type="text" id="row-' . $i . '-tgt" name="row-' . $i . '-tgt"></td>
-    <td></td>
-    </tr>';
+function theme_htaccess_checker_redirects($vars) {
+  $element = $vars['element'];
+  $table = array(
+    '#theme' => 'table',
+    '#header' => array(
+      array('data' => t('Source')),
+      array('data' => t('Target')),
+      array('data' => t('Pass/Fail')),
+    ),
+    '#rows' => array(),
+  );
+  // build redirects array
+  $redirects = array();
+  $options = element_children($element);
+  $count = count($options);
+  $redirect_count = $count / 2;
+  for ($i = 0; $i < $redirect_count; $i++) {
+    $redirects[$i]['source'] = $element['source_' . $i];
+    $redirects[$i]['target'] = $element['target_' . $i];
+  }
+  foreach ($redirects as $redirect) {
+    $table['#rows'][] = array(
+      drupal_render($redirect['source']),
+      drupal_render($redirect['target']),
+      array('data' => ''),
+    );
+  }
+  return render($table);
 }
 
-function htaccess_checker_return_table() {
-  $i = 0;
-  $rows = htaccess_checker_new_row($i);
-  return '
-    <table id="redirects" class="display" cellspacing="0" width="100%">
-        <thead>
-            <tr>
-                <th>Source</th>
-                <th>Target</th>
-                <th>Pass/Fail</th>
-            </tr>
-        </thead>
-        <tbody>
-            ' . $rows . '
-        </tbody>
-    </table>
-  ';
+function htaccess_checker_theme($existing, $type, $theme, $path) {
+  $templates = array();
+  $templates['htaccess_checker_redirects'] = array(
+    'render element' => 'element',
+  );
+  return $templates;
 }
 
 /**
@@ -101,32 +109,46 @@ function htaccess_checker_admin() {
   $form['#prefix'] = '<div id="htaccess-check">';
   $form['#suffix'] = '</div>';
 
-  $table = htaccess_checker_return_table();
-  //$table = htaccess_checker_initialize_table();
+  //$table = htaccess_checker_return_table(); // straight html
+  //$table = htaccess_checker_initialize_table(); // theme_table()
 
+  // Use a custom theme function for the redirects option
+  // which returns a table
   $form['redirects'] = array(
-    '#markup' => $table,
+    '#tree' => TRUE,
+    '#theme' => 'htaccess_checker_redirects',
   );
+
+  // Retrieve saved redirects
+  $redirects = htaccess_checker_get_redirects();
+
+  if (!$redirects) {
+    $num_rows = 1;
+  }
+  else {
+    $num_rows = count($redirects);
+  }
+
+  for ($i = 0; $i < $num_rows; $i++) {
+    $form['redirects']['source_' . $i] = array(
+      '#type' => 'textfield',
+      '#title' => t('Source'),
+      '#default_value' => '',
+      '#size' => 60,
+      '#maxlength' => 128,
+    );
+    $form['redirects']['target_' . $i] = array(
+      '#type' => 'textfield',
+      '#title' => t('Target'),
+      '#default_value' => '',
+      '#size' => 60,
+      '#maxlength' => 128,
+    );
+  }
 
   $form['add_row'] = array(
     '#markup' => '<input type="submit" id="add-row" class="form-submit" value="Add Row">',
   );
-
-  /*$form['redirects']['source'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Source'),
-    '#default_value' => '',
-    '#size' => 60,
-    '#maxlength' => 128,
-  );
-
-  $form['redirects']['target'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Target'),
-    '#default_value' => '',
-    '#size' => 60,
-    '#maxlength' => 128,
-  );*/
 
   $form['submit'] = array(
     '#type' => 'submit',
