@@ -18,9 +18,9 @@ jQuery(document).ready(function($) {
     // Automatically add a first row of data
     $('#add-row').click();
 
-    $('#edit-submit').on('click', function(e) {
+    /*$('#edit-submit').on('click', function(e) {
         var data = t.$('input').serialize();
 
-        debugger;
-    });
+        //debugger;
+    });*/
 })
