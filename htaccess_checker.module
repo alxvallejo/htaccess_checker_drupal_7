@@ -53,6 +53,9 @@ function theme_htaccess_checker_redirects($vars) {
       array('data' => ''),
     );
   }
+
+  // add custom table attributes
+  $table['#attributes'] = array('class' => array(''));
   return render($table);
 }
 
@@ -67,7 +70,7 @@ function htaccess_checker_theme($existing, $type, $theme, $path) {
 /**
  * Settings variables
  */
-function htaccess_checker_admin() {
+function htaccess_checker_admin($form, &$form_state) {
   $form = array();
 
   $form['htaccess_csv_upload'] = array(
@@ -77,40 +80,42 @@ function htaccess_checker_admin() {
   $form['#prefix'] = '<div id="htaccess-check">';
   $form['#suffix'] = '</div>';
 
-  //$table = htaccess_checker_return_table(); // straight html
-  //$table = htaccess_checker_initialize_table(); // theme_table()
-
   // Use a custom theme function for the redirects option
   // which returns a table
   $form['htaccess_checker_redirects'] = array(
     '#tree' => TRUE,
     '#theme' => 'htaccess_checker_redirects',
+    '#prefix' => '<div id="htaccess-checker-redirect-table">',
+    '#suffix' => '</div>',
   );
-
-  // Retrieve saved redirects
-  //$redirects = htaccess_checker_get_redirects();
 
   $redirects = variable_get('htaccess_checker_redirects');
 
-  if (!$redirects) {
-    $row_count = 1;
+  if (isset($form_state['redirect_count'])) {
+    $row_count = $form_state['redirect_count'];
   }
   else {
-    $row_count = count($redirects) / 2;
+    if (!$redirects) {
+      $row_count = 1;
+    }
+    else {
+      $row_count = count($redirects) / 2;
+    }
+    $form_state['redirect_count'] = $row_count;
   }
 
   for ($i = 0; $i < $row_count; $i++) {
     $form['htaccess_checker_redirects']['source_' . $i] = array(
       '#type' => 'textfield',
       '#title' => t('Source'),
-      '#default_value' => isset($redirects) ? $redirects['source_' . $i] : '',
+      '#default_value' => isset($redirects['source_' . $i]) ? $redirects['source_' . $i] : '',
       '#size' => 60,
       '#maxlength' => 128,
     );
     $form['htaccess_checker_redirects']['target_' . $i] = array(
       '#type' => 'textfield',
       '#title' => t('Target'),
-      '#default_value' => isset($redirects) ? $redirects['target_' . $i] : '',
+      '#default_value' => isset($redirects['source_' . $i]) ? $redirects['target_' . $i] : '',
       '#size' => 60,
       '#maxlength' => 128,
     );
@@ -118,37 +123,31 @@ function htaccess_checker_admin() {
 
   $form['add_row'] = array(
     //'#markup' => '<input type="submit" id="add-row" class="form-submit" value="Add Row">',
-    '#type' => 'button',
+    '#type' => 'submit',
     '#value' => t('Add Row'),
+    '#submit' => array('htaccess_checker_add_row_submit'),
     '#ajax' => array(
-      'callback' => 'htaccess_checker_add_row',
-      'wrapper' => 'htaccess-check',
-      'method' => 'after',
+      'callback' => 'htaccess_checker_add_row_callback',
+      'wrapper' => 'htaccess-checker-redirect-table',
+      'method' => 'replace',
       'effect' => 'fade',
     ),
   );
-
-  // this submit is for parsing the csv
-  /*$form['submit'] = array(
-    '#type' => 'submit',
-    '#value' => t('Submit'),
-    '#ajax' => array(
-      'callback' => 'htaccess_checker_callback',
-      'event' => 'click',
-      'wrapper' => 'htaccess-check',
-      'method' => 'after',
-      'effect' => 'fade',
-    ),
-  );*/
-
-  $form['results'] = array();
-
   return system_settings_form($form);
-  //return $form;
 }
 
-function htaccess_checker_add_row(&$form, $form_state) {
-  1===1;
+function htaccess_checker_add_row_callback(&$form, &$form_state) {
+  return $form['htaccess_checker_redirects'];
+}
+
+function htaccess_checker_add_row_submit(&$form, &$form_state) {
+  if (isset($form_state['redirect_count'])) {
+    $form_state['redirect_count']++;
+  }
+  else {
+    $form_state['redirect_count'] = 1;
+  }
+  $form_state['rebuild'] = TRUE;
 }
 
 /**
