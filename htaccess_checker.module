@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Implements hook_menu
+ * Implements hook_menu().
  */
 function htaccess_checker_menu() {
   $items = array();
@@ -14,10 +14,24 @@ function htaccess_checker_menu() {
   return $items;
 }
 
+/**
+ * Implements hook_admin_alter().
+ *
+ * @param $form
+ * @param $form_state
+ * @param $form_id
+ */
 function htaccess_checker_form_htaccess_checker_admin_alter(&$form, &$form_state, $form_id) {
   $form['#after_build'][] = 'htaccess_checker_theme_form';
 }
 
+/**
+ * Additional theming components for the admin page.
+ *
+ * @param $form
+ * @param $form_state
+ * @return mixed
+ */
 function htaccess_checker_theme_form(&$form, &$form_state) {
   drupal_add_css(drupal_get_path('module','htaccess_checker') . '/css/htaccess_checker-form.css');
   drupal_add_css(drupal_get_path('module','htaccess_checker') . '/datatables/datatables.min.css');
@@ -26,6 +40,12 @@ function htaccess_checker_theme_form(&$form, &$form_state) {
   return $form;
 }
 
+/**
+ * Theme callback function for htaccess_checker_theme().
+ *
+ * @param $vars
+ * @return string
+ */
 function theme_htaccess_checker_redirects($vars) {
   $element = $vars['element'];
   $table = array(
@@ -59,6 +79,16 @@ function theme_htaccess_checker_redirects($vars) {
   return render($table);
 }
 
+/**
+ * Theme hook for styling the htaccess_checker_redirects field.
+ * Implements hook_theme().
+ *
+ * @param $existing
+ * @param $type
+ * @param $theme
+ * @param $path
+ * @return array
+ */
 function htaccess_checker_theme($existing, $type, $theme, $path) {
   $templates = array();
   $templates['htaccess_checker_redirects'] = array(
@@ -68,7 +98,11 @@ function htaccess_checker_theme($existing, $type, $theme, $path) {
 }
 
 /**
- * Settings variables
+ * Form callback for the htaccess_checker admin page.
+ *
+ * @param $form
+ * @param $form_state
+ * @return system_settings_form
  */
 function htaccess_checker_admin($form, &$form_state) {
   $form = array();
@@ -136,11 +170,26 @@ function htaccess_checker_admin($form, &$form_state) {
   return system_settings_form($form);
 }
 
-function htaccess_checker_add_row_callback(&$form, &$form_state) {
+/**
+ * Ajax callback on the add_row form button.
+ * This is called after the submit handler to rebuild part of the form.
+ *
+ * @param $form
+ * @param $form_state
+ * @return mixed
+ */
+function htaccess_checker_add_row_callback($form, &$form_state) {
   return $form['htaccess_checker_redirects'];
 }
 
-function htaccess_checker_add_row_submit(&$form, &$form_state) {
+/**
+ * Submit handler for add_row form button
+ * Increments the redirect count before rebuilding the form.
+ *
+ * @param $form
+ * @param $form_state
+ */
+function htaccess_checker_add_row_submit($form, &$form_state) {
   if (isset($form_state['redirect_count'])) {
     $form_state['redirect_count']++;
   }
@@ -151,7 +200,7 @@ function htaccess_checker_add_row_submit(&$form, &$form_state) {
 }
 
 /**
- * Callback for htaccess checker form
+ * Callback for htaccess checker form.
  *
  * @param $form
  * @param $form_state
