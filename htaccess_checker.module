@@ -66,14 +66,13 @@ function theme_htaccess_checker_redirects($vars) {
     $redirects[$i]['source'] = $element['source_' . $i];
     $redirects[$i]['target'] = $element['target_' . $i];
   }
-  foreach ($redirects as $redirect) {
+  foreach ($redirects as $i => $redirect) {
     $table['#rows'][] = array(
       drupal_render($redirect['source']),
       drupal_render($redirect['target']),
-      array('data' => ''),
+      array('data' => '<div id="result_' . $i . '"></div>'),
     );
   }
-
   // add custom table attributes
   $table['#attributes'] = array('class' => array(''));
   return render($table);
@@ -141,14 +140,12 @@ function htaccess_checker_admin($form, &$form_state) {
   for ($i = 0; $i < $row_count; $i++) {
     $form['htaccess_checker_redirects']['source_' . $i] = array(
       '#type' => 'textfield',
-      '#title' => t('Source'),
       '#default_value' => isset($redirects['source_' . $i]) ? $redirects['source_' . $i] : '',
       '#size' => 60,
       '#maxlength' => 128,
     );
     $form['htaccess_checker_redirects']['target_' . $i] = array(
       '#type' => 'textfield',
-      '#title' => t('Target'),
       '#default_value' => isset($redirects['source_' . $i]) ? $redirects['target_' . $i] : '',
       '#size' => 60,
       '#maxlength' => 128,
