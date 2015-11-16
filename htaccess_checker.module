@@ -164,6 +164,18 @@ function htaccess_checker_admin($form, &$form_state) {
       'effect' => 'fade',
     ),
   );
+
+  $form['check_table'] = array(
+    //'#markup' => '<input type="submit" id="add-row" class="form-submit" value="Add Row">',
+    '#type' => 'submit',
+    '#value' => t('Test Redirects'),
+    '#ajax' => array(
+      'callback' => 'htaccess_checker_table_submit',
+      'wrapper' => 'htaccess-checker-redirect-table',
+      'method' => 'replace',
+      'effect' => 'fade',
+    ),
+  );
   return system_settings_form($form);
 }
 
@@ -196,8 +208,12 @@ function htaccess_checker_add_row_submit($form, &$form_state) {
   $form_state['rebuild'] = TRUE;
 }
 
+function htaccess_checker_table_submit(&$form, $form_state) {
+  1===1;
+}
+
 /**
- * Callback for htaccess checker form.
+ * Callback for htaccess checker form CSV.
  *
  * @param $form
  * @param $form_state
@@ -317,4 +333,8 @@ function htaccess_checker_callback(&$form, $form_state) {
   else {
     $commands[] = ajax_command_append('#htaccess-check', 'No file uploaded.');
   }
+}
+
+function htaccess_checker_check_redirect($source, $target) {
+
 }
