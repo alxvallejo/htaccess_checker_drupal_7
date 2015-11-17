@@ -258,59 +258,30 @@ function htaccess_checker_table_submit(&$form, $form_state) {
       '#commands' => $commands,
     );
   }
-  $languages = language_list('enabled')[1];
-  // Get any custom domains to verify against
-  $domains = variable_get('htaccess_checker_domains');
+
   foreach($redirects as $i => $redirect) {
     $src = $redirect['source'];
     $tgt = $redirect['target'];
     if (empty($src) && empty($tgt)) {
       continue;
     }
-    // Check for token replacements
-    if (strpos($src,'{lang-prefix}')) {
-      foreach ($languages as $i => $lang) {
-        $source_language_replacements = str_replace('{lang-prefix}', $lang->prefix, $src);
+    $test_array = htaccess_checker_string_replace($src, $tgt);
+    ///// loop through this array with the checking ...
+
+    // Start result list
+    $commands[] = ajax_command_append('#result_' . $i, '<ul>');
+
+    if ($test_array) {
+      foreach ($test_array as $test) {
+        htaccess_checker_result_compare($test['src'], $test['tgt'], $commands, $i);
       }
-    }
-    if (strpos($tgt,'{lang-prefix}')) {
-      foreach ($languages as $i => $lang) {
-        str_replace('{lang-prefix}', $lang->prefix, $tgt);
-      }
-    }
-    if (strpos($src,'{lang-domain}')) {
-      foreach ($languages as $i => $lang) {
-        if (!empty($domains[$lang->language])) {
-          $lang_domain = $domains[$lang->language];
-        }
-        str_replace('{lang-domain}',$lang_domain,$src);
-      }
-    }
-    if (strpos($tgt,'{lang-domain}')) {
-      foreach ($languages as $i => $lang) {
-        if (!empty($domains[$lang->language])) {
-          $lang_domain = $domains[$lang->language];
-        }
-        str_replace('{lang-domain}',$lang_domain,$tgt);
-      }
-    }
-    $curl_effective_url = htaccess_checker_check_redirect($src, $tgt);
-    if (substr($tgt, -1) !== '/') {
-      $tgt = $tgt . '/';
-    }
-    if (substr($curl_effective_url, -1) !== '/') {
-      $curl_effective_url = $curl_effective_url . '/';
-    }
-    // String comparison
-    if ($tgt == $curl_effective_url) {
-      $commands[] = ajax_command_append('#result_' . $i, 'Success');
-    }
-    elseif ($src == $curl_effective_url) {
-      $commands[] = ajax_command_append('#result_' . $i, 'No Redirect');
     }
     else {
-      $commands[] = ajax_command_append('#result_' . $i, 'Fail: Redirected to ' . $curl_effective_url);
+      htaccess_checker_result_compare($src, $tgt, $commands, $i);
     }
+
+    // End result list
+    $commands[] = ajax_command_append('#result_' . $i, '</ul>');
   }
 
   return array(
@@ -452,6 +423,89 @@ function htaccess_checker_check_redirect($src, $tgt) {
   // @todo - too many closes?
   curl_close($curl);
   return $curl_effective_url;
+}
+
+/**
+ * Check for string replacements against the {lang-prefix} and {lang-domain}
+ *
+ * @param $src
+ * @param $tgt
+ * @return array|null
+ */
+function htaccess_checker_string_replace($src, $tgt) {
+
+  $languages = language_list('enabled')[1];
+
+  $new_array = array();
+
+  // If anything has to be language-replaced, an array for every language has to be created.
+  if (strpos($src,'{lang-prefix}') || strpos($tgt,'{lang-prefix}') || strpos($src,'{lang-domain}') || strpos($tgt,'{lang-domain}')) {
+    foreach ($languages as $lang) {
+      $new_array[$lang->language]['src'] = $src;
+      $new_array[$lang->language]['tgt'] = $tgt;
+    }
+  }
+  else {
+    // If no string replacements are needed,
+    return null;
+  }
+
+  // STRING REPLACEMENTS
+
+  // Lang prefix
+  if (strpos($src,'{lang-prefix}')) {
+    foreach ($languages as $i => $lang) {
+      $new_array[$lang->language]['src'] = str_replace('{lang-prefix}', $lang->prefix, $new_array[$lang->language]['src']);
+    }
+  }
+  if (strpos($tgt,'{lang-prefix}')) {
+    foreach ($languages as $i => $lang) {
+      $new_array[$lang->language]['tgt'] = str_replace('{lang-prefix}', $lang->prefix, $new_array[$lang->language]['tgt']);
+    }
+  }
+
+  // Lang domain
+  // Get any custom domains to verify against
+  $domains = variable_get('htaccess_checker_domains');
+  if (strpos($src,'{lang-domain}')) {
+    foreach ($languages as $i => $lang) {
+      if (!empty($domains[$lang->language])) {
+        $lang_domain = $domains[$lang->language];
+      }
+      $new_array[$lang->language]['src'] = str_replace('{lang-domain}',$lang_domain,$new_array[$lang->language]['src']);
+    }
+  }
+  if (strpos($tgt,'{lang-domain}')) {
+    foreach ($languages as $i => $lang) {
+      if (!empty($domains[$lang->language])) {
+        $lang_domain = $domains[$lang->language];
+      }
+      $new_array[$lang->language]['tgt'] = str_replace('{lang-domain}',$lang_domain,$new_array[$lang->language]['tgt']);
+    }
+  }
+
+  return $new_array;
+}
+
+function htaccess_checker_result_compare($src, $tgt, &$commands, $i) {
+  $curl_effective_url = htaccess_checker_check_redirect($src, $tgt);
+  if (substr($tgt, -1) !== '/') {
+    $tgt = $tgt . '/';
+  }
+  if (substr($curl_effective_url, -1) !== '/') {
+    $curl_effective_url = $curl_effective_url . '/';
+  }
+  // String comparison
+  if ($tgt == $curl_effective_url) {
+    $commands[] = ajax_command_append('#result_' . $i, '<li>Success for ' . $tgt . '</li>');
+  }
+  elseif ($src == $curl_effective_url) {
+    $commands[] = ajax_command_append('#result_' . $i, '<li>No Redirect</li>');
+  }
+  else {
+    $commands[] = ajax_command_append('#result_' . $i, '<li>Fail: Redirected to ' . $curl_effective_url . '</li>');
+  }
+  return $commands;
 }
 
 //function htaccess_checker_string_compare
