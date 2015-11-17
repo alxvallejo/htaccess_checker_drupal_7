@@ -450,7 +450,9 @@ function htaccess_checker_string_replace($src, $tgt) {
     return null;
   }
 
-  // STRING REPLACEMENTS
+  /////////////////////////
+  // STRING REPLACEMENTS //
+  /////////////////////////
 
   // Lang prefix
   if (strpos($src,'{lang-prefix}')) {
@@ -500,7 +502,7 @@ function htaccess_checker_result_compare($src, $tgt, &$commands, $i) {
     $commands[] = ajax_command_append('#result_' . $i, '<li>Success for ' . $tgt . '</li>');
   }
   elseif ($src == $curl_effective_url) {
-    $commands[] = ajax_command_append('#result_' . $i, '<li>No Redirect</li>');
+    $commands[] = ajax_command_append('#result_' . $i, '<li>No Redirect for ' . $src . '</li>');
   }
   else {
     $commands[] = ajax_command_append('#result_' . $i, '<li>Fail: Redirected to ' . $curl_effective_url . '</li>');

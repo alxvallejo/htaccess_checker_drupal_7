@@ -19,3 +19,7 @@
     font-size:13px;
     padding:5px;
 }
+
+#htaccess-checker-redirect-table td div[id^="result_"] {
+    min-width:300px;
+}
