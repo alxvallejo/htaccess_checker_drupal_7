@@ -265,13 +265,12 @@ function htaccess_checker_table_submit(&$form, $form_state) {
     if (empty($src) && empty($tgt)) {
       continue;
     }
-    $test_array = htaccess_checker_string_replace($src, $tgt);
-    ///// loop through this array with the checking ...
 
     // Start result list
     $commands[] = ajax_command_append('#result_' . $i, '<ul>');
 
-    if ($test_array) {
+    // Check for string replacements and, if found, loop through the new array
+    if ($test_array = htaccess_checker_string_replace($src, $tgt)) {
       foreach ($test_array as $test) {
         htaccess_checker_result_compare($test['src'], $test['tgt'], $commands, $i);
       }
