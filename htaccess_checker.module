@@ -60,8 +60,7 @@ function theme_htaccess_checker_redirects($vars) {
   // build redirects array
   $redirects = array();
   $options = element_children($element);
-  $count = count($options);
-  $redirect_count = $count / 2;
+  $redirect_count = count($options) / 2;
   for ($i = 0; $i < $redirect_count; $i++) {
     $redirects[$i]['source'] = $element['source_' . $i];
     $redirects[$i]['target'] = $element['target_' . $i];
@@ -166,7 +165,6 @@ function htaccess_checker_admin($form, &$form_state) {
   );
 
   $form['check_table'] = array(
-    //'#markup' => '<input type="submit" id="add-row" class="form-submit" value="Add Row">',
     '#type' => 'submit',
     '#value' => t('Test Redirects'),
     '#ajax' => array(
@@ -209,7 +207,58 @@ function htaccess_checker_add_row_submit($form, &$form_state) {
 }
 
 function htaccess_checker_table_submit(&$form, $form_state) {
-  1===1;
+  $commands = array();
+  $options = element_children($form['htaccess_checker_redirects']);
+  $count = count($options) / 2;
+  $redirects = array();
+  for ($i = 0; $i < $count; $i++) {
+    // Loop through each pair and perform the curl request
+    $redirects[$i]['source'] = $form['htaccess_checker_redirects']['source_' . $i]['#value'];
+    $redirects[$i]['target'] = $form['htaccess_checker_redirects']['target_' . $i]['#value'];
+  }
+  if (empty($redirects)) {
+    $commands[] = ajax_command_append('#htaccess-checker-redirect-table', 'No redirects saved.');
+    return array(
+      '#type' => 'ajax',
+      '#commands' => $commands,
+    );
+  }
+  foreach($redirects as $i => $redirect) {
+    $src = $redirect['source'];
+    $tgt = $redirect['target'];
+    $headers = array(
+      'Host: ' . $src
+    );
+    $curl = curl_init();
+    curl_setopt($curl,CURLOPT_HTTPHEADER,$headers);
+    curl_setopt($curl,CURLOPT_URL,$tgt);
+    curl_setopt($curl,CURLINFO_HEADER_OUT,true);
+    curl_setopt($curl,CURLOPT_RETURNTRANSFER,true);
+    $result = curl_exec($curl);
+    $curl_header_sent = curl_getinfo($curl,CURLINFO_HEADER_OUT);
+    $curl_effective_url = curl_getinfo($curl,CURLINFO_EFFECTIVE_URL);
+    if (substr($tgt, -1) !== '/') {
+      $tgt = $tgt . '/';
+    }
+    if (substr($curl_effective_url, -1) !== '/') {
+      $curl_effective_url = $curl_effective_url . '/';
+    }
+    // String comparison
+    if ($tgt == $curl_effective_url) {
+      $commands[] = ajax_command_append('#result_' . $i, 'Success');
+    }
+    elseif ($src == $curl_effective_url) {
+      $commands[] = ajax_command_append('#result_' . $i, 'No Redirect');
+    }
+    else {
+      $commands[] = ajax_command_append('#result_' . $i, 'Fail: Redirected to ' . $curl_effective_url);
+    }
+  }
+  curl_close($curl);
+  return array(
+    '#type' => 'ajax',
+    '#commands' => $commands,
+  );
 }
 
 /**
