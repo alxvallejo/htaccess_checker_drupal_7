@@ -485,6 +485,18 @@ function htaccess_checker_string_replace($src, $tgt) {
     }
   }
 
+  // Lang code (for node edit pages)
+  if (strpos($src,'{lang-code}')) {
+    foreach ($languages as $i => $lang) {
+      $new_array[$lang->language]['src'] = str_replace('{lang-code}', $lang->language, $new_array[$lang->language]['src']);
+    }
+  }
+  if (strpos($tgt,'{lang-code}')) {
+    foreach ($languages as $i => $lang) {
+      $new_array[$lang->language]['tgt'] = str_replace('{lang-code}', $lang->language, $new_array[$lang->language]['tgt']);
+    }
+  }
+
   return $new_array;
 }
 
