@@ -1,4 +1,5 @@
-#htaccess-check .success-redirects .success {
+#htaccess-check .success-redirects .success,
+#htaccess-checker-redirect-table .success {
     color: green;
 }
 
@@ -6,8 +7,13 @@
     color: #0678be;
 }
 
-#htaccess-check .wrong-redirects .tgt {
+#htaccess-check .wrong-redirects .tgt,
+#htaccess-checker-redirect-table .fail {
     color: red;
+}
+
+#htaccess-checker-redirect-table .no-redirect {
+    color: orange;
 }
 
 #htaccess-check .wrong-redirects .effective {
