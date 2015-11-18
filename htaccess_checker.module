@@ -303,13 +303,24 @@ function htaccess_checker_check_redirect($src, $redirect_counter = 0) {
     $response['error'] = t('Too many redirects for ' . $src . '.');
     return $response;
   }
-  $headers = array('Host: ' . parse_url($src, PHP_URL_HOST));
+  $hostname = parse_url($src, PHP_URL_HOST);
+  $headers = array('Host: ' . $hostname);
   $protocol = substr($src,0,5) == 'https' ? 'https' : 'http';
   $curl = curl_init($protocol . '://127.0.0.1');
   $response = array();
   // Set header
   curl_setopt($curl,CURLOPT_HTTPHEADER,$headers);
-  curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, false);
+  curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, 1);
+  curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, 1);
+
+  $resolve = array(sprintf(
+    "%s:%d:%s",
+    $hostname,
+    '443',
+    '127.0.0.1'
+  ));
+  curl_setopt($curl, CURLOPT_RESOLVE, $resolve);
+
   // Set referer
   //curl_setopt($curl,CURLOPT_REFERER,$src);
   // Set destination url
