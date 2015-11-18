@@ -412,7 +412,7 @@ function htaccess_checker_callback(&$form, $form_state) {
  */
 function htaccess_checker_check_redirect($src, $redirect_counter = 0) {
   // Stop redirect checking after a max setting
-  if (5 <= $redirect_counter) {
+  if (5 == $redirect_counter) {
     $response['error'] = t('Too many redirects for ' . $src . '.');
     return $response;
   }
@@ -456,25 +456,24 @@ function htaccess_checker_check_redirect($src, $redirect_counter = 0) {
           // Recursion!
           curl_close($curl);
           $redirect_counter++;
-          htaccess_checker_check_redirect($location, $redirect_counter);
+          $response = htaccess_checker_check_redirect($location, $redirect_counter);
           break;
         default:
-          $response['error'] = t('There was an error processing your request.');
+          $response['error'] = t('Location found, but with error ' . $src . '.');
           break;
       }
     }
     else {
-      $response['error'] = t('No Location in response header.');
+      $response['error'] = t('No Location in response header for source ' . $src . '.');
     }
     1===1;
   }
   else {
-    $response['error'] = t('There was an error with your request.');
+    $response['error'] = t('No curl response ' . $src . '.');
   }
   // @todo - too many closes?
   curl_close($curl);
   return $response;
-  //return $curl_effective_url;
 }
 
 /**
@@ -559,11 +558,11 @@ function htaccess_checker_result_compare($src, $tgt, &$commands, $i) {
   $element = '#htaccess-checker-redirect-table';
   // Set the url to localhost IP.
   // We mask the hostname in the request header
-  
+
   // Check the Location and response code of the redirect
   $response = htaccess_checker_check_redirect($src);
   if (isset($response['error'])) {
-    $commands[] = ajax_command_append($element, '<li class="fail">' . $response['error'] . ' for source ' . $src . '</li>');
+    $commands[] = ajax_command_append($element, '<li class="fail">' . $response['error'] . '</li>');
   }
   elseif (isset($response['success'])) {
     $curl_effective_url = $response['success'];
