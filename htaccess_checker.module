@@ -304,7 +304,7 @@ function htaccess_checker_table_submit(&$form, $form_state) {
  * @param $tgt
  * @return mixed
  */
-function htaccess_checker_check_redirect($src, $redirect_counter = 0) {
+function htaccess_checker_check_redirect($src, $tgt, $redirect_counter = 0) {
   // Stop redirect checking after a max setting
   if (4 == $redirect_counter) {
     $response['error'] = t('Too many redirects for ' . $src . '.');
@@ -382,6 +382,7 @@ function htaccess_checker_check_redirect($src, $redirect_counter = 0) {
         else {
           $response['Server'] = 'Apache';
         }
+        // Do the comparison here, since the $src may not match
         $response['success'] = $src;
       }
       else {
@@ -484,7 +485,7 @@ function htaccess_checker_result_compare($src, $tgt, &$commands, $i) {
   // We mask the hostname in the request header
 
   // Check the Location and response code of the redirect
-  $response = htaccess_checker_check_redirect($src);
+  $response = htaccess_checker_check_redirect($src, $tgt);
   if (isset($response['error'])) {
     $commands[] = ajax_command_append($element, '<li class="fail">' . $response['error'] . '</li>');
   }
@@ -498,12 +499,6 @@ function htaccess_checker_result_compare($src, $tgt, &$commands, $i) {
   }
   if (substr($curl_effective_url, -1) !== '/') {
     $curl_effective_url = $curl_effective_url . '/';
-  }
-
-  // Header Information?
-  if (isset($response['request_header'])) {
-    //if ()
-    1===1;
   }
 
   // String comparison
