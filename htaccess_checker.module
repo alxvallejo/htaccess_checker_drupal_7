@@ -241,6 +241,13 @@ function htaccess_checker_add_row_submit($form, &$form_state) {
   $form_state['rebuild'] = TRUE;
 }
 
+/**
+ * Callback for table submit
+ *
+ * @param $form
+ * @param $form_state
+ * @return array
+ */
 function htaccess_checker_table_submit(&$form, $form_state) {
   $commands = array();
   $options = element_children($form['htaccess_checker_redirects']);
