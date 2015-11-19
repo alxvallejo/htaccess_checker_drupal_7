@@ -299,24 +299,26 @@ function htaccess_checker_table_submit(&$form, $form_state) {
  */
 function htaccess_checker_check_redirect($src, $redirect_counter = 0) {
   // Stop redirect checking after a max setting
-  if (5 == $redirect_counter) {
+  if (4 == $redirect_counter) {
     $response['error'] = t('Too many redirects for ' . $src . '.');
     return $response;
   }
   $hostname = parse_url($src, PHP_URL_HOST);
   $headers = array('Host: ' . $hostname);
   $protocol = substr($src,0,5) == 'https' ? 'https' : 'http';
-  $curl = curl_init($protocol . '://127.0.0.1');
+  $curl = curl_init($src);
   $response = array();
   // Set header
   curl_setopt($curl,CURLOPT_HTTPHEADER,$headers);
-  curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, 1);
-  curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, 1);
+  curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, 0);
+  curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, 0);
+
+  $port = ('https' == $protocol) ? '443' : '80';
 
   $resolve = array(sprintf(
     "%s:%d:%s",
     $hostname,
-    '443',
+    $port,
     '127.0.0.1'
   ));
   curl_setopt($curl, CURLOPT_RESOLVE, $resolve);
@@ -324,7 +326,7 @@ function htaccess_checker_check_redirect($src, $redirect_counter = 0) {
   // Set referer
   //curl_setopt($curl,CURLOPT_REFERER,$src);
   // Set destination url
-  //curl_setopt($curl,CURLOPT_URL,'127.0.0.1');
+  //curl_setopt($curl,CURLOPT_URL,$src);
   // Set a max redirects allowed
   // Track the handle's request string
   curl_setopt($curl,CURLINFO_HEADER_OUT,TRUE);
@@ -336,16 +338,18 @@ function htaccess_checker_check_redirect($src, $redirect_counter = 0) {
   curl_setopt($curl,CURLOPT_NOBODY,TRUE);
   // Recursively follow redirects
   //curl_setopt($curl,CURLOPT_FOLLOWLOCATION,1);
+  // Set referer on redirect
+  curl_setopt($curl,CURLOPT_AUTOREFERER,TRUE);
   curl_setopt($curl,CURLOPT_USERAGENT, 'Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.0.3705; .NET CLR 1.1.4322)');
   $result = curl_exec($curl);
-  $curl_header_sent = curl_getinfo($curl,CURLINFO_HEADER_OUT);
+  $request_header = curl_getinfo($curl,CURLINFO_HEADER_OUT);
   $response_code = curl_getinfo($curl,CURLINFO_HTTP_CODE);
   //$curl_effective_url = curl_getinfo($curl,CURLINFO_EFFECTIVE_URL);
   curl_close($curl);
   // Return the Location in the header
   if ($result) {
-    $headers = http_parse_headers($result);
-    $location = $headers['Location'];
+    $response_header = http_parse_headers($result);
+    $location = $response_header['Location'];
     if (!empty($location)) {
       switch ($response_code) {
         case '200':
@@ -354,7 +358,6 @@ function htaccess_checker_check_redirect($src, $redirect_counter = 0) {
         case '301':
         case '302':
           // Recursion!
-
           $redirect_counter++;
           $response = htaccess_checker_check_redirect($location, $redirect_counter);
           break;
@@ -364,14 +367,28 @@ function htaccess_checker_check_redirect($src, $redirect_counter = 0) {
       }
     }
     else {
-      $response['error'] = t('No Location in response header for source ' . $src . '.');
+      if (isset($response_header['Content-Language'])) {
+        // Make sure it's not nginx, aka Acquia
+        if ('Apache' !== substr($response_header['Server'],0,6)) {
+          1===1;
+        }
+        else {
+          $response['Server'] = 'Apache';
+        }
+        $response['success'] = $src;
+      }
+      else {
+        $response['error'] = t('No Location in response header for source ' . $src . '.');
+      }
     }
-    1===1;
   }
   else {
     $response['error'] = t('No curl response ' . $src . '.');
   }
-  // @todo - too many closes?
+
+  // pass along the request headers
+  $response['request_header'] = $request_header;
+  $response['response_header'] = $response_header;
 
   return $response;
 }
@@ -474,6 +491,12 @@ function htaccess_checker_result_compare($src, $tgt, &$commands, $i) {
   }
   if (substr($curl_effective_url, -1) !== '/') {
     $curl_effective_url = $curl_effective_url . '/';
+  }
+
+  // Header Information?
+  if (isset($response['request_header'])) {
+    //if ()
+    1===1;
   }
 
   // String comparison
