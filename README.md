@@ -5,6 +5,12 @@ Tricky rewrite rules require tricky testing. Setting up vhosts across all your t
 
 For sites that have large amounts of rewrite rules in place and large numbers of sensitive rewrite testing, this module can help. This will also help if you are operating a multilingual site and want to test your rewrites against multiple domains, multiple language prefixes and language codes.
 
+### Features
+- Localhost testing for any domain you manage
+- SSL support
+- Multilingual support
+- CSV upload support
+
 ## Assumptions
 - Must have all ServerAliases assigned to the appropriate VirtualHost settings.
 
