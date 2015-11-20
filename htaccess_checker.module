@@ -91,6 +91,9 @@ function theme_htaccess_checker_redirects($vars) {
       array('data' => t('Pass/Fail')),
     ),
     '#rows' => array(),
+    '#attributes' => array(
+      'id' => 'htaccess-check-table',
+    ),
   );
   // build redirects array
   $redirects = array();
@@ -491,7 +494,7 @@ function htaccess_checker_string_replace($src, $tgt) {
  * @return array
  */
 function htaccess_checker_result_compare($src, $tgt, &$commands, $i) {
-  // Where to place the ajax response
+  // Ajax target element
   // $element = '#result_' . $i;
   $element = '#htaccess-checker-redirect-table';
   // Set the url to localhost IP.
@@ -504,9 +507,6 @@ function htaccess_checker_result_compare($src, $tgt, &$commands, $i) {
   }
   elseif (isset($response['success'])) {
     $curl_effective_url = $response['success'];
-  }
-  else {
-    1===1;
   }
 
   // Normalize all urls
