@@ -243,6 +243,9 @@ function htaccess_checker_add_row_submit($form, &$form_state) {
 
 /**
  * Callback for table submit
+ * Run all string replacements and then send off
+ * to the result compare function that runs the
+ * curl request and compares results.
  *
  * @param $form
  * @param $form_state
@@ -279,6 +282,7 @@ function htaccess_checker_table_submit(&$form, $form_state) {
     // Check for string replacements and, if found, loop through the new array
     if ($test_array = htaccess_checker_string_replace($src, $tgt)) {
       foreach ($test_array as $test) {
+        // This performs the curl request
         htaccess_checker_result_compare($test['src'], $test['tgt'], $commands, $i);
       }
     }
@@ -351,43 +355,42 @@ function htaccess_checker_check_redirect($src, $tgt, $redirect_counter = 0) {
   $result = curl_exec($curl);
   $request_header = curl_getinfo($curl,CURLINFO_HEADER_OUT);
   $response_code = curl_getinfo($curl,CURLINFO_HTTP_CODE);
-  //$curl_effective_url = curl_getinfo($curl,CURLINFO_EFFECTIVE_URL);
+  $curl_effective_url = curl_getinfo($curl,CURLINFO_EFFECTIVE_URL);
   curl_close($curl);
   // Return the Location in the header
   if ($result) {
     $response_header = http_parse_headers($result);
     $location = $response_header['Location'];
-    if (!empty($location)) {
-      switch ($response_code) {
-        case '200':
-          $response['success'] = $location;
-          break;
-        case '301':
-        case '302':
-          // Recursion!
-          $redirect_counter++;
-          $response = htaccess_checker_check_redirect($location, $redirect_counter);
-          break;
-        default:
-          $response['error'] = t('Location found, but with error ' . $src . '.');
-          break;
-      }
-    }
-    else {
-      if (isset($response_header['Content-Language'])) {
-        // Make sure it's not nginx, aka Acquia
-        if ('Apache' !== substr($response_header['Server'],0,6)) {
-          1===1;
+    switch ($response_code) {
+      case '200':
+        // Location will not be set. Instead we should either a) parse the Link on the header or b) Check that it's Apache
+        if (isset($response_header['Content-Language'])) {
+          if ('Apache' !== substr($response_header['Server'],0,6)) {
+            // Make sure it's not nginx, aka Acquia
+          }
+          else {
+            $response['Server'] = 'Apache';
+          }
+          $response['success'] = $curl_effective_url;
         }
         else {
-          $response['Server'] = 'Apache';
+          $response['error'] = t('200 response but missing target info from ' . $src . '.');
         }
-        // Do the comparison here, since the $src may not match
-        $response['success'] = $src;
-      }
-      else {
-        $response['error'] = t('No Location in response header for source ' . $src . '.');
-      }
+        break;
+      case '301':
+      case '302':
+        if (!empty($location)) {
+          // Recursion!
+          $redirect_counter++;
+          $response = htaccess_checker_check_redirect($location, $tgt, $redirect_counter);
+        }
+        else {
+          $response['error'] = t('Location found, but with error ' . $src . '.');
+        }
+        break;
+      default:
+        $response['error'] = t('Location found, but with error ' . $src . '.');
+        break;
     }
   }
   else {
@@ -477,6 +480,16 @@ function htaccess_checker_string_replace($src, $tgt) {
   return $new_array;
 }
 
+/**
+ * Run the curl request and return
+ * ajax commands for the table submit request
+ *
+ * @param $src
+ * @param $tgt
+ * @param $commands
+ * @param $i
+ * @return array
+ */
 function htaccess_checker_result_compare($src, $tgt, &$commands, $i) {
   // Where to place the ajax response
   // $element = '#result_' . $i;
@@ -492,14 +505,14 @@ function htaccess_checker_result_compare($src, $tgt, &$commands, $i) {
   elseif (isset($response['success'])) {
     $curl_effective_url = $response['success'];
   }
+  else {
+    1===1;
+  }
 
-  // Ignore trailing slash for string comparison
-  if (substr($tgt, -1) !== '/') {
-    $tgt = $tgt . '/';
-  }
-  if (substr($curl_effective_url, -1) !== '/') {
-    $curl_effective_url = $curl_effective_url . '/';
-  }
+  // Normalize all urls
+  $src = htaccess_checker_slash_url($src);
+  $tgt = htaccess_checker_slash_url($tgt);
+  $curl_effective_url = htaccess_checker_slash_url($curl_effective_url);
 
   // String comparison
   if ($tgt == $curl_effective_url) {
@@ -509,10 +522,24 @@ function htaccess_checker_result_compare($src, $tgt, &$commands, $i) {
     $commands[] = ajax_command_append($element, '<li class="no-redirect">No Redirect: ' . $src . ' Redirected to ' . $curl_effective_url . '</li>');
   }
   else {
-    $commands[] = ajax_command_append($element, '<li class="fail">Fail: ' . $src . ' redirected to ' . $curl_effective_url . '</li>');
+    $commands[] = ajax_command_append($element, '<li class="fail">Fail: ' . $src . ' did not redirect to ' . $tgt . '</li>');
   }
 
   return $commands;
+}
+
+/**
+ * Helper function that adds a trailing slash to URLs
+ * used for string comparison
+ *
+ * @param $url
+ * @return string
+ */
+function htaccess_checker_slash_url($url) {
+  if (substr($url, -1) !== '/') {
+    $url .= '/';
+  }
+  return $url;
 }
 
 /**
