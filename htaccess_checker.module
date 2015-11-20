@@ -105,13 +105,15 @@ function theme_htaccess_checker_redirects($vars) {
   }
   foreach ($redirects as $i => $redirect) {
     $table['#rows'][] = array(
-      drupal_render($redirect['source']),
-      drupal_render($redirect['target']),
-      array('data' => '<div id="result_' . $i . '"></div>'),
+      'data' => array(
+        drupal_render($redirect['source']),
+        drupal_render($redirect['target']),
+        array('data' => '<div id="result_' . $i . '"></div>'),
+      ),
+      'class' => array('draggable'),
     );
   }
-  // add custom table attributes
-  $table['#attributes'] = array('class' => array(''));
+  drupal_add_tabledrag('htaccess-check-table','order','sibling','check-weight','NULL','NULL',FALSE);
   return render($table);
 }
 
