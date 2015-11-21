@@ -89,6 +89,7 @@ function theme_htaccess_checker_redirects($vars) {
       array('data' => t('Source')),
       array('data' => t('Target')),
       array('data' => t('Pass/Fail')),
+      array('data' => t('Weight')),
     ),
     '#rows' => array(),
     '#attributes' => array(
@@ -98,10 +99,11 @@ function theme_htaccess_checker_redirects($vars) {
   // build redirects array
   $redirects = array();
   $options = element_children($element);
-  $redirect_count = count($options) / 2;
+  $redirect_count = count($options) / 3;
   for ($i = 0; $i < $redirect_count; $i++) {
     $redirects[$i]['source'] = $element['source_' . $i];
     $redirects[$i]['target'] = $element['target_' . $i];
+    $redirects[$i]['weight'] = $element[$i]['weight'];
   }
   foreach ($redirects as $i => $redirect) {
     $table['#rows'][] = array(
@@ -109,11 +111,12 @@ function theme_htaccess_checker_redirects($vars) {
         drupal_render($redirect['source']),
         drupal_render($redirect['target']),
         array('data' => '<div id="result_' . $i . '"></div>'),
+        drupal_render($redirect['weight']),
       ),
       'class' => array('draggable'),
     );
   }
-  drupal_add_tabledrag('htaccess-check-table','order','sibling','check-weight','NULL','NULL',FALSE);
+  drupal_add_tabledrag('htaccess-check-table','order','sibling','weight','NULL','NULL',FALSE);
   return render($table);
 }
 
@@ -171,7 +174,7 @@ function htaccess_checker_admin($form, &$form_state) {
       $row_count = 1;
     }
     else {
-      $row_count = count($redirects) / 2;
+      $row_count = count($redirects) / 3;
     }
     $form_state['redirect_count'] = $row_count;
   }
@@ -188,6 +191,13 @@ function htaccess_checker_admin($form, &$form_state) {
       '#default_value' => isset($redirects['source_' . $i]) ? $redirects['target_' . $i] : '',
       '#size' => 60,
       '#maxlength' => 128,
+    );
+    // Weight field for re-ordering
+    $form['htaccess_checker_redirects'][$i]['weight'] = array(
+      '#type' => 'weight',
+      '#title' => t('Weight'),
+      '#default_value' => isset($redirects[$i]['weight']) ? $redirects[$i]['weight'] : $i,
+      '#delta' => 10,
     );
   }
 
