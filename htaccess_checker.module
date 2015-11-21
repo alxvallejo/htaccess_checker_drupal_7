@@ -180,12 +180,14 @@ function htaccess_checker_admin($form, &$form_state) {
       '#default_value' => isset($redirects['source_' . $i]) ? $redirects['source_' . $i] : '',
       '#size' => 60,
       '#maxlength' => 128,
+      '#element_validate' => array('htaccess_checker_validate'),
     );
     $form['htaccess_checker_redirects']['target_' . $i] = array(
       '#type' => 'textfield',
       '#default_value' => isset($redirects['source_' . $i]) ? $redirects['target_' . $i] : '',
       '#size' => 60,
       '#maxlength' => 128,
+      '#element_validate' => array('htaccess_checker_validate'),
     );
   }
 
@@ -225,6 +227,12 @@ function htaccess_checker_admin($form, &$form_state) {
  */
 function htaccess_checker_add_row_callback($form, &$form_state) {
   return $form['htaccess_checker_redirects'];
+}
+
+function htaccess_checker_validate($element, &$form_state, $form) {
+  if (empty($element['#value'])) {
+    form_error($element, t('This field is required.'));
+  }
 }
 
 /**
