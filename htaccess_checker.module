@@ -100,8 +100,8 @@ function theme_htaccess_checker_redirects($vars) {
   $options = element_children($element);
   $redirect_count = count($options) / 2;
   for ($i = 0; $i < $redirect_count; $i++) {
-    $redirects[$i]['source'] = $element['source_' . $i];
-    $redirects[$i]['target'] = $element['target_' . $i];
+    $redirects[$i]['source'] = $element[$i]['source'];
+    $redirects[$i]['target'] = $element[$i]['target'];
   }
   foreach ($redirects as $i => $redirect) {
     $table['#rows'][] = array(
@@ -175,16 +175,16 @@ function htaccess_checker_admin($form, &$form_state) {
   }
 
   for ($i = 0; $i < $row_count; $i++) {
-    $form['htaccess_checker_redirects']['source_' . $i] = array(
+    $form['htaccess_checker_redirects'][$i]['source'] = array(
       '#type' => 'textfield',
-      '#default_value' => isset($redirects['source_' . $i]) ? $redirects['source_' . $i] : '',
+      '#default_value' => isset($redirects[$i]['source']) ? $redirects[$i]['source'] : '',
       '#size' => 60,
       '#maxlength' => 128,
       '#element_validate' => array('htaccess_checker_validate'),
     );
-    $form['htaccess_checker_redirects']['target_' . $i] = array(
+    $form['htaccess_checker_redirects'][$i]['target'] = array(
       '#type' => 'textfield',
-      '#default_value' => isset($redirects['source_' . $i]) ? $redirects['target_' . $i] : '',
+      '#default_value' => isset($redirects[$i]['target']) ? $redirects[$i]['target'] : '',
       '#size' => 60,
       '#maxlength' => 128,
       '#element_validate' => array('htaccess_checker_validate'),
@@ -269,8 +269,8 @@ function htaccess_checker_table_submit(&$form, $form_state) {
   $redirects = array();
   for ($i = 0; $i < $count; $i++) {
     // Loop through each pair and perform the curl request
-    $redirects[$i]['source'] = $form['htaccess_checker_redirects']['source_' . $i]['#value'];
-    $redirects[$i]['target'] = $form['htaccess_checker_redirects']['target_' . $i]['#value'];
+    $redirects[$i]['source'] = $form['htaccess_checker_redirects'][$i]['source']['#value'];
+    $redirects[$i]['target'] = $form['htaccess_checker_redirects'][$i]['target']['#value'];
   }
   if (empty($redirects)) {
     $commands[] = ajax_command_append('#htaccess-checker-redirect-table', 'No redirects saved.');
