@@ -89,6 +89,7 @@ function theme_htaccess_checker_redirects($vars) {
       array('data' => t('Source')),
       array('data' => t('Target')),
       array('data' => t('Pass/Fail')),
+      array('data' => t('Delete')),
     ),
     '#rows' => array(),
     '#attributes' => array(
@@ -98,16 +99,18 @@ function theme_htaccess_checker_redirects($vars) {
   // build redirects array
   $redirects = array();
   $options = element_children($element);
-  $redirect_count = count($options) / 2;
+  $redirect_count = count($options) / 3;
   for ($i = 0; $i < $redirect_count; $i++) {
     $redirects[$i]['source'] = $element['source_' . $i];
     $redirects[$i]['target'] = $element['target_' . $i];
+    $redirects[$i]['delete'] = $element['delete_' . $i];
   }
   foreach ($redirects as $i => $redirect) {
     $table['#rows'][] = array(
       drupal_render($redirect['source']),
       drupal_render($redirect['target']),
       array('data' => '<div id="result_' . $i . '"></div>'),
+      drupal_render($redirect['delete']),
     );
   }
   // add custom table attributes
@@ -189,6 +192,24 @@ function htaccess_checker_admin($form, &$form_state) {
       '#maxlength' => 128,
       '#element_validate' => array('htaccess_checker_validate'),
     );
+    $form['htaccess_checker_redirects']['delete_' . $i] = array(
+      '#type' => 'button',
+      '#value' => t('Delete'),
+      //'#submit' => array('htaccess_checker_delete_row_submit'),
+      '#ajax' => array(
+        'callback' => 'htaccess_checker_delete_row_callback',
+        'wrapper' => 'htaccess-checker-redirect-table',
+        'method' => 'replace',
+        'effect' => 'fade',
+      ),
+      '#attributes' => array(
+        'data-row' => $i,
+      ),
+    );
+    $form['htaccess_checker_redirects']['hidden_' . $i] = array(
+      '#type' => 'hidden',
+      '#value' => $i,
+    );
   }
 
   $form['add_row'] = array(
@@ -229,6 +250,12 @@ function htaccess_checker_add_row_callback($form, &$form_state) {
   return $form['htaccess_checker_redirects'];
 }
 
+function htaccess_checker_delete_row_callback($form, &$form_state) {
+  $row = $form_state['triggering_element']['#attributes']['data-row'];
+  $form_state['values']['htaccess_checker_redirects']['']
+  return $form['htaccess_checker_redirects'];
+}
+
 function htaccess_checker_validate($element, &$form_state, $form) {
   if (empty($element['#value'])) {
     form_error($element, t('This field is required.'));
@@ -250,6 +277,10 @@ function htaccess_checker_add_row_submit($form, &$form_state) {
     $form_state['redirect_count'] = 1;
   }
   $form_state['rebuild'] = TRUE;
+}
+
+function htaccess_checker_delete_row_submit($form, &$form_state) {
+  1===1;
 }
 
 /**
