@@ -89,6 +89,7 @@ function theme_htaccess_checker_redirects($vars) {
       array('data' => t('Source')),
       array('data' => t('Target')),
       array('data' => t('Pass/Fail')),
+      array('data' => t('Delete')),
     ),
     '#rows' => array(),
     '#attributes' => array(
@@ -98,16 +99,18 @@ function theme_htaccess_checker_redirects($vars) {
   // build redirects array
   $redirects = array();
   $options = element_children($element);
-  $redirect_count = count($options) / 2;
+  $redirect_count = count($options);
   for ($i = 0; $i < $redirect_count; $i++) {
     $redirects[$i]['source'] = $element[$i]['source'];
     $redirects[$i]['target'] = $element[$i]['target'];
+    $redirects[$i]['delete'] = $element[$i]['delete'];
   }
   foreach ($redirects as $i => $redirect) {
     $table['#rows'][] = array(
       drupal_render($redirect['source']),
       drupal_render($redirect['target']),
       array('data' => '<div id="result_' . $i . '"></div>'),
+      drupal_render($redirect['delete']),
     );
   }
   // add custom table attributes
@@ -161,6 +164,9 @@ function htaccess_checker_admin($form, &$form_state) {
 
   $redirects = variable_get('htaccess_checker_redirects');
 
+  /**
+   * Form state logic for add/remove rows
+   */
   if (isset($form_state['redirect_count'])) {
     $row_count = $form_state['redirect_count'];
   }
@@ -169,9 +175,17 @@ function htaccess_checker_admin($form, &$form_state) {
       $row_count = 1;
     }
     else {
-      $row_count = count($redirects) / 2;
+      $row_count = count($redirects);
     }
     $form_state['redirect_count'] = $row_count;
+  }
+  if ($redirects && isset($form_state['remove']) && !empty($form_state['remove'])) {
+    // nullify removed rows
+    foreach ($form_state['remove'] as $row) {
+      unset($redirects[$row]);
+    }
+    // reset the array
+    $redirects = array_values($redirects);
   }
 
   for ($i = 0; $i < $row_count; $i++) {
@@ -181,6 +195,9 @@ function htaccess_checker_admin($form, &$form_state) {
       '#size' => 60,
       '#maxlength' => 128,
       '#element_validate' => array('htaccess_checker_validate'),
+      '#attributes' => array(
+        'data-row' => $i,
+      ),
     );
     $form['htaccess_checker_redirects'][$i]['target'] = array(
       '#type' => 'textfield',
@@ -188,6 +205,24 @@ function htaccess_checker_admin($form, &$form_state) {
       '#size' => 60,
       '#maxlength' => 128,
       '#element_validate' => array('htaccess_checker_validate'),
+      '#attributes' => array(
+        'data-row' => $i,
+      ),
+    );
+    $form['htaccess_checker_redirects'][$i]['delete'] = array(
+      '#type' => 'submit',
+      '#value' => t('Delete'),
+      '#submit' => array('htaccess_checker_delete_row_submit'),
+      '#ajax' => array(
+        'callback' => 'htaccess_checker_delete_row_callback',
+        'wrapper' => 'htaccess-checker-redirect-table',
+        'method' => 'replace',
+        'effect' => 'fade',
+      ),
+      '#attributes' => array(
+        'data-row' => $i,
+        'op' => 'delete',
+      ),
     );
   }
 
@@ -229,9 +264,41 @@ function htaccess_checker_add_row_callback($form, &$form_state) {
   return $form['htaccess_checker_redirects'];
 }
 
+function htaccess_checker_delete_row_callback($form, &$form_state) {
+  return $form['htaccess_checker_redirects'];
+}
+
+/**
+ * Validation for form table elements
+ *
+ * @param $element
+ * @param $form_state
+ * @param $form
+ */
 function htaccess_checker_validate($element, &$form_state, $form) {
-  if (empty($element['#value'])) {
-    form_error($element, t('This field is required.'));
+  if ($form_state['submitted'] != TRUE) {
+    // ajax callback validation
+    // Rely on custom attribute of the triggering element
+    switch ($form_state['triggering_element']['#attributes']['op']) {
+      case 'delete':
+        break;
+      default:
+        if (empty($element['#value'])) {
+          // @todo - this may not be required and may error when adding a row? (but it's not)
+          form_error($element, t('This field is required.'));
+        }
+        break;
+    }
+  }
+  elseif ($form_state['submitted'] == TRUE) {
+    // if any element on a row is empty,
+    // remove the row completely
+    if (empty($element['#value'])) {
+      $row = $element['#attributes']['data-row'];
+      if (isset($row)) {
+        unset($form_state['values']['htaccess_checker_redirects'][$row]);
+      }
+    }
   }
 }
 
@@ -253,6 +320,26 @@ function htaccess_checker_add_row_submit($form, &$form_state) {
 }
 
 /**
+ * Submit handler for delete button
+ * When rebuilding the form, check the remove array
+ * and decrease the count by one.
+ *
+ * @param $form
+ * @param $form_state
+ */
+function htaccess_checker_delete_row_submit($form, &$form_state) {
+  $row = $form_state['triggering_element']['#attributes']['data-row'];
+  if (isset($form['htaccess_checker_redirects'][$row])) {
+    $form_state['remove'][] = $row;
+    unset($form_state['htaccess_checker_redirects']['input'][$row]);
+    unset($form_state['htaccess_checker_redirects']['values'][$row]);
+    $form_state['redirect_count'] = $form_state['redirect_count'] - 1;
+    drupal_set_message(t('You have unsaved changes. Please save configuration.'), 'warning');
+  }
+  $form_state['rebuild'] = TRUE;
+}
+
+/**
  * Callback for table submit
  * Run all string replacements and then send off
  * to the result compare function that runs the
@@ -265,7 +352,7 @@ function htaccess_checker_add_row_submit($form, &$form_state) {
 function htaccess_checker_table_submit(&$form, $form_state) {
   $commands = array();
   $options = element_children($form['htaccess_checker_redirects']);
-  $count = count($options) / 2;
+  $count = count($options);
   $redirects = array();
   for ($i = 0; $i < $count; $i++) {
     // Loop through each pair and perform the curl request
