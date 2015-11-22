@@ -59,7 +59,7 @@ function htaccess_checker_settings($form, &$form_state) {
     '#type' => 'fieldset',
     '#tree' => TRUE,
     '#title' => t('Top Level Domain Settings'),
-    '#description' => t('List any custom language domains that aren\'t set in Drupal\'s Language Settings. This will provide the {lang-domain} token replacement for testing.'),
+    '#description' => t('List any custom language domains that aren\'t set in Drupal\'s <a href="@language-settings">Language Settings</a>. This will provide the {lang-domain} token replacement for testing.', array('@language-settings' => url('admin/config/regional/language'))),
   );
   $options = variable_get('htaccess_checker_domains');
   foreach ($languages as $lang) {
