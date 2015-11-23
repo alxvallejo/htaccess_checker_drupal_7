@@ -263,6 +263,9 @@ function htaccess_checker_admin($form, &$form_state) {
       'wrapper' => 'htaccess-checker-redirect-table',
       'method' => 'replace',
       'effect' => 'fade',
+      /*'progress' => array(
+        'type' => 'bar',
+      ),*/
     ),
   );
   return system_settings_form($form);
@@ -407,10 +410,10 @@ function htaccess_checker_table_submit(&$form, $form_state) {
     $commands[] = ajax_command_append('#result_' . $i, '<ul>');
 
     // Check for string replacements and, if found, loop through the new array
-    if ($test_array = htaccess_checker_string_replace($src, $tgt)) {
-      foreach ($test_array as $test) {
+    if ($row_variants = htaccess_checker_string_replace($src, $tgt)) {
+      foreach ($row_variants as $variant) {
         // This performs the curl request
-        htaccess_checker_result_compare($test['src'], $test['tgt'], $commands, $i, $result_counter);
+        htaccess_checker_result_compare($variant['src'], $variant['tgt'], $commands, $i, $result_counter);
         // Main counter
         $counter['pass'] = $counter['pass'] + $result_counter['pass'];
         $counter['none'] = $counter['none'] + $result_counter['none'];
@@ -530,6 +533,14 @@ function htaccess_checker_check_redirect($src, $tgt, $redirect_counter = 0) {
         }
         else {
           $response['error'] = t('Location found, but with error ' . $src . '.');
+        }
+        break;
+      case '403':
+        if ($redirect_counter > 0) {
+          $response['success'] = $curl_effective_url;
+        }
+        else {
+          $response['error'] = t('403 response on source ' . $src . ' with no redirects');
         }
         break;
       default:
