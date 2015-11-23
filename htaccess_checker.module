@@ -460,19 +460,27 @@ function htaccess_checker_check_redirect($src, $tgt, $redirect_counter = 0) {
   $protocol = substr($src,0,5) == 'https' ? 'https' : 'http';
   $curl = curl_init($src);
   $response = array();
-  // Set header
+
+  /**
+   * CURL OPTIONS
+   *
+   * CURLOPT_HTTPHEADER     - Set headers
+   * CURLOPT_SSL_VERIFYPEER - Don't verify peer certificate
+   * CURLOPT_SSL_VERIFYHOST - Don't check for a common name on the certificate
+   * CURLOPT_RESOLVE        - Assign custom host name to IP address
+   * CURLINFO_HEADER_OUT    - Track the handle's request string
+   * CURLOPT_RETURNTRANSFER - Return the response
+   * CURLOPT_HEADER         - Include the header in the response
+   * CURLOPT_NOBODY         - Exclude the body in the response
+   * CURLOPT_AUTOREFERER    - Set referer on redirects
+   * CURLOPT_USERAGENT      - Define the user agent in the header
+   *
+   */
+
   curl_setopt($curl,CURLOPT_HTTPHEADER,$headers);
-  // Stop curl from verifying the peer's certificate
-  // Alternate certificates to verify against can be specified
-  // with CURLOPT_CAINFO or with CURLOPT_CAPATH
   curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, 0);
-  // Set to 1 to check for the existence of a common name
-  // in the SSL peer certificate. 2 to also verify that the common
-  // name also matches the hostname provided.
   curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, 0);
-
   $port = ('https' == $protocol) ? '443' : '80';
-
   $resolve = array(sprintf(
     "%s:%d:%s",
     $hostname,
@@ -480,23 +488,12 @@ function htaccess_checker_check_redirect($src, $tgt, $redirect_counter = 0) {
     '127.0.0.1'
   ));
   curl_setopt($curl, CURLOPT_RESOLVE, $resolve);
-
-  // Set referer
-  //curl_setopt($curl,CURLOPT_REFERER,$src);
-  // Set destination url
-  //curl_setopt($curl,CURLOPT_URL,$src);
-  // Set a max redirects allowed
-  // Track the handle's request string
   curl_setopt($curl,CURLINFO_HEADER_OUT,TRUE);
-  // Return the value
   curl_setopt($curl,CURLOPT_RETURNTRANSFER,TRUE);
-  // Include the header in the response
   curl_setopt($curl,CURLOPT_HEADER,TRUE);
-  // Exclude the Body
   curl_setopt($curl,CURLOPT_NOBODY,TRUE);
   // Recursively follow redirects
   //curl_setopt($curl,CURLOPT_FOLLOWLOCATION,1);
-  // Set referer on redirect
   curl_setopt($curl,CURLOPT_AUTOREFERER,TRUE);
   curl_setopt($curl,CURLOPT_USERAGENT, 'Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.0.3705; .NET CLR 1.1.4322)');
   $result = curl_exec($curl);
