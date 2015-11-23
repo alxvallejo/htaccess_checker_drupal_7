@@ -626,7 +626,7 @@ function htaccess_checker_result_compare($src, $tgt, &$commands, $i) {
     $commands[] = ajax_command_append($element, '<li class="no-redirect">No Redirect: ' . $src . ' Redirected to ' . $curl_effective_url . '</li>');
   }
   else {
-    $commands[] = ajax_command_append($element, '<li class="fail">Fail: ' . $src . ' did not redirect to ' . $tgt . '</li>');
+    $commands[] = ajax_command_append($element, '<li class="fail">Fail: ' . $src . ' did not redirect to ' . $tgt . ' and instead redirected to ' . $curl_effective_url . '</li>');
   }
 
   return $commands;
