@@ -389,6 +389,8 @@ function htaccess_checker_table_submit(&$form, $form_state) {
     'none' => 0,
   );
 
+  $test_array = array();
+
   foreach($redirects as $i => $redirect) {
     $src = $redirect['source'];
     $tgt = $redirect['target'];
@@ -407,24 +409,31 @@ function htaccess_checker_table_submit(&$form, $form_state) {
     $commands[] = ajax_command_append('#result_' . $i, '<ul>');
 
     // Check for string replacements and, if found, loop through the new array
-    if ($test_array = htaccess_checker_string_replace($src, $tgt)) {
-      foreach ($test_array as $test) {
+    if ($row_languages = htaccess_checker_string_replace($src, $tgt)) {
+      foreach ($row_languages as $language_test) {
+        $test_array[] = $language_test;
         // This performs the curl request
-        htaccess_checker_result_compare($test['src'], $test['tgt'], $commands, $i, $result_counter);
+        //htaccess_checker_result_compare($language_test['src'], $language_test['tgt'], $commands, $i, $result_counter);
         // Main counter
-        $counter['pass'] = $counter['pass'] + $result_counter['pass'];
-        $counter['none'] = $counter['none'] + $result_counter['none'];
-        $counter['fail'] = $counter['fail'] + $result_counter['fail'];
+        //$counter['pass'] = $counter['pass'] + $result_counter['pass'];
+        //$counter['none'] = $counter['none'] + $result_counter['none'];
+        //$counter['fail'] = $counter['fail'] + $result_counter['fail'];
       }
     }
     else {
       htaccess_checker_result_compare($src, $tgt, $commands, $i, $counter);
     }
 
-    $commands[] = ajax_command_append('#result_' . $i, '<li class="success">' . $result_counter['pass'] . ' passed.');
+    //$commands[] = ajax_command_append('#result_' . $i, '<li class="success">' . $result_counter['pass'] . ' passed.');
 
     // End result list
-    $commands[] = ajax_command_append('#result_' . $i, '</ul>');
+    //$commands[] = ajax_command_append('#result_' . $i, '</ul>');
+  }
+
+  // multi curl ?
+  if (!empty($test_array)) {
+    $results = htaccess_checker_multi_curl($test_array);
+    1===1;
   }
 
   // Counter summary
@@ -622,6 +631,27 @@ function htaccess_checker_string_replace($src, $tgt) {
   }
 
   return $new_array;
+}
+
+/**
+ * $test can be part of a row, in our case a language variant
+ *
+ * @param $test_array
+ */
+function htaccess_checker_multi_curl($test_array) {
+  $curly = array();
+  $result = array();
+  // multi handle
+  $mh = curl_multi_init();
+
+  // @todo - default curl options array via curl_setopt_array($ch, $options)
+
+  foreach ($test_array as $i => $test) {
+    $curly[$i] = curl_init();
+
+
+    1===1;
+  }
 }
 
 /**
