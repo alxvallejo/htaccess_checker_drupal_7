@@ -28,3 +28,7 @@
 #htaccess-checker-redirect-table td div[id^="result_"] {
     min-width:300px;
 }
+
+#htaccess-check .toggle-verbose {
+    float:right;
+}
