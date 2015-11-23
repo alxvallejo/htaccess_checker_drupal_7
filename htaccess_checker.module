@@ -414,15 +414,16 @@ function htaccess_checker_table_submit(&$form, $form_state) {
       foreach ($row_variants as $variant) {
         // This performs the curl request
         htaccess_checker_result_compare($variant['src'], $variant['tgt'], $commands, $i, $result_counter);
-        // Main counter
-        $counter['pass'] = $counter['pass'] + $result_counter['pass'];
-        $counter['none'] = $counter['none'] + $result_counter['none'];
-        $counter['fail'] = $counter['fail'] + $result_counter['fail'];
       }
     }
     else {
-      htaccess_checker_result_compare($src, $tgt, $commands, $i, $counter);
+      htaccess_checker_result_compare($src, $tgt, $commands, $i, $result_counter);
     }
+
+    // Main counter
+    $counter['pass'] = $counter['pass'] + $result_counter['pass'];
+    $counter['none'] = $counter['none'] + $result_counter['none'];
+    $counter['fail'] = $counter['fail'] + $result_counter['fail'];
 
     $commands[] = ajax_command_append('#result_' . $i, '<li class="success">' . $result_counter['pass'] . ' passed.');
 
