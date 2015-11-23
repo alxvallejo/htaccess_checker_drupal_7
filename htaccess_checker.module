@@ -428,9 +428,11 @@ function htaccess_checker_table_submit(&$form, $form_state) {
   }
 
   // Counter summary
-  $commands[] = ajax_command_prepend('#htaccess-checker-redirect-table', '<div class="success">' . $counter['pass'] . '</div>');
-  $commands[] = ajax_command_prepend('#htaccess-checker-redirect-table', '<div class="no-redirect">' . $counter['none'] . '</div>');
-  $commands[] = ajax_command_prepend('#htaccess-checker-redirect-table', '<div class="fail">' . $counter['fail'] . '</div>');
+  $commands[] = ajax_command_prepend('#htaccess-checker-redirect-table', '<div class="success">' . $counter['pass'] . ' successful rewrites tested.</div>');
+  $commands[] = ajax_command_prepend('#htaccess-checker-redirect-table', '<div class="no-redirect">' . $counter['none'] . ' has no rewrites, possibly due to a missing virtual host.</div>');
+  $commands[] = ajax_command_prepend('#htaccess-checker-redirect-table', '<div class="fail">' . $counter['fail'] . ' failed to redirect to their target.</div>');
+  $total = $counter['pass'] + $counter['none'] + $counter['fail'];
+  $commands[] = ajax_command_prepend('#htaccess-checker-redirect-table', '<div class="total">' . $total . ' total rewrites tested.</div>');
 
   return array(
     '#type' => 'ajax',
@@ -664,7 +666,7 @@ function htaccess_checker_result_compare($src, $tgt, &$commands, $i, &$counter) 
   }
   else {
     $commands[] = ajax_command_append($table, '<li class="fail">Fail: ' . $src . ' did not redirect to ' . $tgt . ' and instead redirected to ' . $curl_effective_url . '</li>');
-    $commands[] = ajax_command_append($result, '<li class="fail">' . $src . ' redirected to ' . $curl_effective_url . '</li>');
+    $commands[] = ajax_command_append($result, '<li class="fail">' . $src . ' did not redirect to ' . $tgt . '</li>');
     $counter['fail']++;
   }
 
