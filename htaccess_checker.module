@@ -545,7 +545,16 @@ function htaccess_checker_check_redirect($src, $tgt, $redirect_counter = 0) {
         }
         break;
       default:
-        $response['error'] = t('Location found, but with error ' . $src . '.');
+        // 404s can happen even when you get the URL that you want
+        // i.e., if you're trying to add a translation to a language that already has it
+        // Check the redirect count and simply report a success if a redirect happened
+        // AND it matches the tgt
+        if ($redirect_counter > 0 && $curl_effective_url == $tgt) {
+          $response['success'] = $curl_effective_url;
+        }
+        else {
+          $response['error'] = t('Location found, but with error ' . $src . '.');
+        }
         break;
     }
   }
@@ -592,12 +601,26 @@ function htaccess_checker_string_replace($src, $tgt) {
   // Lang prefix
   if (strpos($src,'{lang-prefix}')) {
     foreach ($languages as $i => $lang) {
-      $new_array[$lang->language]['src'] = str_replace('{lang-prefix}', $lang->prefix, $new_array[$lang->language]['src']);
+      // Don't allow empty replacements in the URL if there's a trailing slash
+      if ($lang->prefix == '' && strpos($new_array[$lang->language]['src'], '{lang-prefix}/')) {
+        $replace = '{lang-prefix}/';
+      }
+      else {
+        $replace = '{lang-prefix}';
+      }
+      $new_array[$lang->language]['src'] = str_replace($replace, $lang->prefix, $new_array[$lang->language]['src']);
     }
   }
   if (strpos($tgt,'{lang-prefix}')) {
     foreach ($languages as $i => $lang) {
-      $new_array[$lang->language]['tgt'] = str_replace('{lang-prefix}', $lang->prefix, $new_array[$lang->language]['tgt']);
+      // Don't allow empty replacements in the URL if there's a trailing slash
+      if ($lang->prefix == '' && strpos($new_array[$lang->language]['src'], '{lang-prefix}/')) {
+        $replace = '{lang-prefix}/';
+      }
+      else {
+        $replace = '{lang-prefix}';
+      }
+      $new_array[$lang->language]['tgt'] = str_replace($replace, $lang->prefix, $new_array[$lang->language]['tgt']);
     }
   }
 
