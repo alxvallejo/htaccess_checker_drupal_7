@@ -159,7 +159,7 @@ function htaccess_checker_admin($form, &$form_state) {
     '#description' => t('Toggles a list of results below the form'),
     '#default_value' => 0,
     '#weight' => 0,
-    '#prefix' => '<div class="toggle-verbose">',
+    '#prefix' => '<div class="toggle-verbose clearfix">',
     '#suffix' => '</div>',
     /*'#attributes' => array(
       'class' => array('toggle-verbose'),
@@ -200,13 +200,14 @@ function htaccess_checker_admin($form, &$form_state) {
     // reset the redirects var
     variable_set('htaccess_checker_redirects', array_values($redirects));
     $redirects = variable_get('htaccess_checker_redirects');
-    drupal_set_message(t('Redirect deleted.'), 'message');
+    drupal_set_message(t('Redirect deleted.'), 'status');
   }
 
   for ($i = 0; $i < $row_count; $i++) {
     $form['htaccess_checker_redirects'][$i]['source'] = array(
       '#type' => 'textfield',
       '#default_value' => isset($redirects[$i]['source']) ? $redirects[$i]['source'] : '',
+      '#value' => isset($redirects[$i]['source']) ? $redirects[$i]['source'] : '',
       '#size' => 60,
       '#maxlength' => 128,
       '#element_validate' => array('htaccess_checker_validate'),
@@ -217,6 +218,7 @@ function htaccess_checker_admin($form, &$form_state) {
     $form['htaccess_checker_redirects'][$i]['target'] = array(
       '#type' => 'textfield',
       '#default_value' => isset($redirects[$i]['target']) ? $redirects[$i]['target'] : '',
+      '#value' => isset($redirects[$i]['target']) ? $redirects[$i]['target'] : '',
       '#size' => 60,
       '#maxlength' => 128,
       '#element_validate' => array('htaccess_checker_validate'),
@@ -233,7 +235,10 @@ function htaccess_checker_admin($form, &$form_state) {
         'callback' => 'htaccess_checker_delete_row_callback',
         'wrapper' => 'htaccess-checker-redirect-table',
         'method' => 'replace',
-        'effect' => 'fade',
+        'effect' => 'none',
+        'progress' => array(
+          'type' => 'none',
+        ),
       ),
       '#attributes' => array(
         'data-row' => $i,
