@@ -1,6 +1,13 @@
 jQuery(document).ready(function($) {
 
-
+    $('#edit-htaccess-checker-toggle-verbose').live('click', function() {
+        if ($('#verbose-container').attr('style', 'display:none !important')) {
+            $('#verbose-container').attr('style', 'display:block !important');
+        }
+        else {
+            $('#verbose-container').attr('style', 'display:none !important');
+        }
+    });
 
     // below code for datatables
     //console.log('hey');

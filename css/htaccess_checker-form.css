@@ -1,5 +1,6 @@
 #htaccess-check .success-redirects .success,
-#htaccess-checker-redirect-table .success {
+#htaccess-checker-redirect-table .success,
+#verbose-container .success {
     color: green;
 }
 
@@ -8,11 +9,13 @@
 }
 
 #htaccess-check .wrong-redirects .tgt,
-#htaccess-checker-redirect-table .fail {
+#htaccess-checker-redirect-table .fail,
+#verbose-container fail {
     color: red;
 }
 
-#htaccess-checker-redirect-table .no-redirect {
+#htaccess-checker-redirect-table .no-redirect,
+#verbose-container .no-redirect {
     color: orange;
 }
 

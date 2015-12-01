@@ -197,11 +197,12 @@ function htaccess_checker_admin($form, &$form_state) {
 
   // Use a custom theme function for the redirects option
   // which returns a table
+  // Append a results to the container
   $form['htaccess_checker_redirects'] = array(
     '#tree' => TRUE,
     '#theme' => 'htaccess_checker_redirects',
     '#prefix' => '<div id="htaccess-checker-redirect-table">',
-    '#suffix' => '</div>',
+    '#suffix' => '</div><div id="verbose-container" style="display:none !important;"></div>',
   );
 
   $redirects = variable_get('htaccess_checker_redirects');
@@ -732,17 +733,21 @@ function htaccess_checker_result_compare($src, $tgt, &$commands, $i, &$counter) 
   $tgt = htaccess_checker_slash_url($tgt);
   $curl_effective_url = htaccess_checker_slash_url($curl_effective_url);
 
+  // Verbose results container
+  $verbose_container = '#verbose-container';
+  //$commands[] = ajax_command_append($table, '<div id="verbose-container" style="display:none !important;"></div>');
+
   // String comparison
   if ($tgt == $curl_effective_url) {
-    $commands[] = ajax_command_append($table, '<li class="success">Success: ' . $src . ' redirected to ' . $curl_effective_url . '</li>');
+    $commands[] = ajax_command_append($verbose_container, '<li class="success">Success: ' . $src . ' redirected to ' . $curl_effective_url . '</li>');
     $counter['pass']++;
   }
   elseif ($src == $curl_effective_url) {
-    $commands[] = ajax_command_append($table, '<li class="no-redirect">No Redirect: ' . $src . ' Redirected to ' . $curl_effective_url . '</li>');
+    $commands[] = ajax_command_append($verbose_container, '<li class="no-redirect">No Redirect: ' . $src . ' Redirected to ' . $curl_effective_url . '</li>');
     $counter['none']++;
   }
   else {
-    $commands[] = ajax_command_append($table, '<li class="fail">Fail: <a href="' . $src . '">' . $src . '</a> did not redirect to ' . $tgt . ' and instead redirected to ' . $curl_effective_url . '</li>');
+    $commands[] = ajax_command_append($verbose_container, '<li class="fail">Fail: <a href="' . $src . '">' . $src . '</a> did not redirect to ' . $tgt . ' and instead redirected to ' . $curl_effective_url . '</li>');
     $commands[] = ajax_command_append($result, '<li class="fail">' . $src . ' did not redirect to ' . $tgt . '</li>');
     $counter['fail']++;
   }
