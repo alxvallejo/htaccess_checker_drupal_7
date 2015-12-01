@@ -427,6 +427,11 @@ function htaccess_checker_table_submit(&$form, $form_state) {
   );
 
   foreach($redirects as $i => $redirect) {
+
+    // SSL String replacements on the redirect row
+    // @todo
+    //$redirect = htaccess_checker_convert_ssl($redirect);
+
     $src = $redirect['source'];
     $tgt = $redirect['target'];
     if (empty($src) && empty($tgt)) {
@@ -603,8 +608,9 @@ function htaccess_checker_check_redirect($src, $tgt, $redirect_counter = 0) {
   return $response;
 }
 
-function htaccess_checker_convert_ssl($src, $tgt) {
+function htaccess_checker_convert_ssl($redirect) {
   // Strip http and https from strings
+  $ssl_options = variable_get('htaccess_checker_ssl');
 }
 
 /**
