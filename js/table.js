@@ -1,7 +1,7 @@
 jQuery(document).ready(function($) {
 
     $('#edit-htaccess-checker-toggle-verbose').live('click', function() {
-        if ($('#verbose-container').attr('style', 'display:none !important')) {
+        if ($('#verbose-container').attr('style') == 'display:none !important') {
             $('#verbose-container').attr('style', 'display:block !important');
         }
         else {

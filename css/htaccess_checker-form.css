@@ -10,7 +10,7 @@
 
 #htaccess-check .wrong-redirects .tgt,
 #htaccess-checker-redirect-table .fail,
-#verbose-container fail {
+#verbose-container .fail {
     color: red;
 }
 

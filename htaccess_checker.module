@@ -179,8 +179,9 @@ function htaccess_checker_admin($form, &$form_state) {
     '#type' => 'file',
   );*/
 
+  // Append a results to the container
   $form['#prefix'] = '<div id="htaccess-check"><div class="description">' . t('Available string replacements: {lang-domain}, {lang-prefix}, {lang-code}') . '</div>';
-  $form['#suffix'] = '</div>';
+  $form['#suffix'] = '</div><div id="verbose-container" style="display:none !important;"></div>';
 
   $form['htaccess_checker_toggle_verbose'] = array(
     '#type' => 'checkbox',
@@ -197,12 +198,11 @@ function htaccess_checker_admin($form, &$form_state) {
 
   // Use a custom theme function for the redirects option
   // which returns a table
-  // Append a results to the container
   $form['htaccess_checker_redirects'] = array(
     '#tree' => TRUE,
     '#theme' => 'htaccess_checker_redirects',
     '#prefix' => '<div id="htaccess-checker-redirect-table">',
-    '#suffix' => '</div><div id="verbose-container" style="display:none !important;"></div>',
+    '#suffix' => '</div>',
   );
 
   $redirects = variable_get('htaccess_checker_redirects');
