@@ -388,7 +388,6 @@ function htaccess_checker_delete_row_submit($form, &$form_state) {
     unset($form_state['htaccess_checker_redirects']['values'][$row]);
     $form_state['redirect_count'] = $form_state['redirect_count'] - 1;
     $form_state['remove'][] = $row;
-
   }
   $form_state['rebuild'] = TRUE;
 }
